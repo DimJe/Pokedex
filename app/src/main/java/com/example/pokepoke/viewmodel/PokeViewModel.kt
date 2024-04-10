@@ -1,13 +1,16 @@
 package com.example.pokepoke.viewmodel
 
+import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.pokepoke.data.PokemonListItem
+import com.example.pokepoke.data.toListItem
 import com.example.pokepoke.network.ResultType
 import com.example.pokepoke.repository.PokeRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
@@ -15,7 +18,7 @@ class PokeViewModel @Inject constructor(
     private val repository: PokeRepository
 ): ViewModel(){
 
-    var pageNum = 1
+    var pageNum = 0
 
     var pokemonList = mutableStateOf<List<PokemonListItem>>(listOf())
     var loadError = mutableStateOf("")
@@ -29,6 +32,14 @@ class PokeViewModel @Inject constructor(
             when(result){
                 is ResultType.Success -> {
                     endReached.value = pageNum * 50 >= result.data!!.results.size
+                    val pokeListItem = result.data.results.map { it.toListItem() }
+                    pokeListItem.forEach {
+                        Timber.e("$it\n")
+                    }
+                    pageNum++
+                    loadError.value = ""
+                    isLoading.value = false
+                    pokemonList.value += pokeListItem
                 }
                 is ResultType.Error -> {
                     loadError.value = result.message!!

@@ -49,9 +49,11 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.compose.LazyPagingItems
@@ -63,6 +65,7 @@ import com.bumptech.glide.request.RequestOptions
 import com.bumptech.glide.signature.ObjectKey
 import com.example.pokepoke.data.Pokemon
 import com.example.pokepoke.data.PokemonDetail
+import com.example.pokepoke.data.PokemonListItem
 import com.example.pokepoke.data.PokemonSource
 import com.example.pokepoke.data.ScreenState
 import com.example.pokepoke.network.ApiService
@@ -82,9 +85,6 @@ import timber.log.Timber
 //기존 livedata에 새로 얻어온 20개의 데이터를 추가하는 과정이 리스트 크기가 커질수록 오래걸림
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-    var _live = MutableLiveData<ArrayList<PokemonDetail>>(arrayListOf())
-    val live : LiveData<ArrayList<PokemonDetail>> = _live
-    var nextUrl = ""
     var WTF = true
     var TAG = "tag"
     var index = 0
@@ -95,6 +95,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Timber.plant(Timber.DebugTree())
+        viewModel.loadPokemonList()
         setContent {
             PokePokeTheme {
                 navController = rememberNavController()
@@ -103,22 +104,15 @@ class MainActivity : ComponentActivity() {
 
                     NavHost(navController = navController, startDestination = ScreenState.Main.name){
                         composable(route = ScreenState.Main.name){
-                            //PokemonLazyVerticalGrid()
+                            PokemonLazyVerticalGrid()
                         }
-                        composable(route = ScreenState.Detail.name){
-                            DetailView()
+                        composable(route = "${ScreenState.Detail.name}/{data}", arguments = listOf(navArgument("data"){
+                            type = NavType.StringType
+                        })){
+                            DetailView(it.arguments?.getString("data")!!)
                         }
                     }
                 }
-            }
-        }
-    }
-
-
-    fun getDetail(urlList: List<Pokemon>){
-        CoroutineScope(Dispatchers.IO).launch {
-            launch {
-                _live.postValue(_live.value?.plus(getDetailList(urlList)) as ArrayList<PokemonDetail>)
             }
         }
     }
@@ -138,41 +132,39 @@ class MainActivity : ComponentActivity() {
     @Composable
     fun PokemonLazyVerticalGrid(){
 
-        val listState = rememberLazyGridState()
-        val state = rememberScrollState()
-        val list = remember {
-            Pager(PagingConfig(pageSize = 20, enablePlaceholders = true)) {
-                PokemonSource(ApiService.instance)
-            }
-        }
-        val pItem = list.flow.collectAsLazyPagingItems()
+        val pokemonList by remember { viewModel.pokemonList }
+        val endReached by remember { viewModel.endReached }
+        val loadError by remember { viewModel.loadError }
+        val isLoading by remember { viewModel.isLoading }
+
         LazyVerticalGrid(
             modifier = Modifier
                 .fillMaxSize(),
-            columns = GridCells.Fixed(2),
-            state = listState,
+            columns = GridCells.Fixed(2)
         ) {
             item(span = { GridItemSpan(this.maxLineSpan)}) {
                 MyTopAppBar(name = stringResource(id = R.string.app_name))
             }
-            items(pItem.itemSnapshotList){
-                ListItem(data = it!!)
+            items(pokemonList.count()){
+                if(!isLoading && it >= pokemonList.count()-1){
+                    viewModel.loadPokemonList()
+                }
+                ListItem(data = pokemonList[it])
             }
         }
     }
     @Composable
-    fun ListItem(data: Pokemon){
+    fun ListItem(data: PokemonListItem){
 
-        val imgUrl = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${1}.png"
         //리스트 나오는데 7-8초
         Column(modifier = Modifier
             .fillMaxWidth(0.5f)
             .padding(10.dp)
             .clickable {
                 //choiceData = data
-                navController.navigate(ScreenState.Detail.name)
+                navController.navigate("${ScreenState.Detail.name}/${data}")
             }) {
-            GlideImage(imageModel = imgUrl,
+            GlideImage(imageModel = data.imgUrl,
                 requestOptions = { RequestOptions().encodeQuality(30).format(DecodeFormat.PREFER_RGB_565).onlyRetrieveFromCache(true).centerCrop()
                 },
                 contentDescription = "test",
@@ -187,13 +179,14 @@ class MainActivity : ComponentActivity() {
                     )
 
             )
-            //Text(text = String.format("No.%04d",data.id), color = Color.Gray, modifier = Modifier.padding(top = 5.dp))
+            Text(text = String.format("No.%04d",data.number), color = Color.Gray, modifier = Modifier.padding(top = 5.dp))
             Text(text = data.name.replaceFirstChar{it.uppercase()}, color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 17.sp,modifier = Modifier.padding(vertical = 5.dp))
         }
     }
-    @Preview(showBackground = true)
+
     @Composable
-    fun DetailView(){
+    fun DetailView(dataJson : String){
+        Timber.e("detail = $dataJson")
         val imgUrl = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${1}.png"
         Column(modifier = Modifier.fillMaxSize()) {
             Box(modifier = Modifier
@@ -242,24 +235,4 @@ fun MyTopAppBar(name: String){
             )
         ) }, backgroundColor = Color.White,
     )
-}
-@SuppressLint("UnusedMaterialScaffoldPaddingParameter", "CoroutineCreationDuringComposition")
-@Composable
-fun GreetingPreview() {
-    val list = listOf<String>("bug","water","fire")
-    val imgUrl = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/1.png"
-    PokePokeTheme {
-
-        Scaffold {
-            Row(modifier = Modifier
-                .wrapContentHeight()
-                .fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween){
-                list.forEach {
-                    TypeBox(text = it, modifier = Modifier
-                        .weight(1f)
-                        .background(Color.Black))
-                }
-            }
-        }
-    }
 }

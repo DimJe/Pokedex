@@ -1,6 +1,5 @@
 package com.example.pokepoke.di
 
-import com.example.pokepoke.network.ApiService
 import com.example.pokepoke.network.PokeService
 import com.example.pokepoke.repository.PokeRepository
 import com.squareup.moshi.Moshi

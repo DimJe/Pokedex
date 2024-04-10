@@ -17,4 +17,6 @@ class PokeRepository @Inject constructor(
         }
         return ResultType.Success(response.body()!!)
     }
+
+    //suspend fun getPokemonDetail
 }
