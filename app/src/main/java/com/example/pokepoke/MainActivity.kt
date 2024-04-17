@@ -55,6 +55,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import com.google.accompanist.navigation.animation.composable
@@ -72,6 +73,7 @@ import com.example.pokepoke.ui.theme.PokePokeTheme
 import com.example.pokepoke.viewmodel.PokeViewModel
 import com.google.accompanist.navigation.animation.AnimatedNavHost
 import com.google.accompanist.navigation.animation.rememberAnimatedNavController
+import com.skydoves.landscapist.CircularReveal
 import com.skydoves.landscapist.glide.GlideImage
 import com.skydoves.landscapist.palette.BitmapPalette
 import dagger.hilt.android.AndroidEntryPoint
@@ -114,13 +116,12 @@ class MainActivity : ComponentActivity() {
                         }
                         composable(
                             enterTransition = {slideIntoContainer(AnimatedContentScope.SlideDirection.Left, animationSpec = tween(700))},
-                            route = "${ScreenState.Detail.name}/{data}/{x}/{y}",
+                            route = "${ScreenState.Detail.name}/{data}",
                             arguments = listOf(navArgument("data",
                             ) {
                             type = NavType.StringType
                         })){
-                            val x = it.arguments?.getString("x").toString().toFloat()
-                            val y = it.arguments?.getString("y").toString().toFloat()
+
                             DetailView(it.arguments?.getString("data")!!)
                         }
                     }
@@ -187,7 +188,7 @@ class MainActivity : ComponentActivity() {
             .padding(10.dp)
             .combinedClickable(
                 onClick = {
-                    navController.navigate("${ScreenState.Detail.name}/${data.number}/${itemPosition.x}/${itemPosition.y}") {
+                    navController.navigate("${ScreenState.Detail.name}/${data.number}") {
                     }
                 },
                 onLongClick = {
@@ -204,7 +205,7 @@ class MainActivity : ComponentActivity() {
             }
         ) {
             GlideImage(imageModel = data.imgUrl,
-                requestOptions = { RequestOptions().encodeQuality(30).format(DecodeFormat.PREFER_RGB_565).onlyRetrieveFromCache(true).centerCrop()
+                requestOptions = { RequestOptions().encodeQuality(30).format(DecodeFormat.PREFER_RGB_565).centerCrop()
                 },
                 contentDescription = "test",
                 bitmapPalette = BitmapPalette{

@@ -1,5 +1,6 @@
 package com.example.pokepoke.repository
 
+import com.example.pokepoke.data.PokemonDetail
 import com.example.pokepoke.data.PokemonList
 import com.example.pokepoke.network.PokeService
 import com.example.pokepoke.network.ResultType
@@ -18,5 +19,9 @@ class PokeRepository @Inject constructor(
         return ResultType.Success(response.body()!!)
     }
 
-    //suspend fun getPokemonDetail
+//    suspend fun getPokemonDetail(number: Int): ResultType<PokemonDetail>{
+//        val response = try {
+//            api.
+//        }
+//    }
 }

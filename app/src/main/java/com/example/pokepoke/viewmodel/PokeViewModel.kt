@@ -33,9 +33,7 @@ class PokeViewModel @Inject constructor(
                 is ResultType.Success -> {
                     endReached.value = pageNum * 50 >= result.data!!.results.size
                     val pokeListItem = result.data.results.map { it.toListItem() }
-                    pokeListItem.forEach {
-                        Timber.e("$it\n")
-                    }
+
                     pageNum++
                     loadError.value = ""
                     isLoading.value = false
