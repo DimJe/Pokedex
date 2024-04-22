@@ -18,8 +18,10 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -31,9 +33,13 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.Icon
+import androidx.compose.material.IconButton
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
 import androidx.compose.material.TopAppBar
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -121,23 +127,13 @@ class MainActivity : ComponentActivity() {
                             ) {
                             type = NavType.StringType
                         })){
-
+                            viewModel.loadDetail(it.arguments?.getString("data")!!)
                             DetailView(it.arguments?.getString("data")!!)
                         }
                     }
                 }
             }
         }
-    }
-    suspend fun getDetailList(urlList: List<Pokemon>): ArrayList<PokemonDetail>{
-        val list = arrayListOf<PokemonDetail>()
-
-        urlList.forEach {
-            val result = ApiService.instance.getPokemonDetail(it.url)
-            if (result.isSuccessful) list.add(result.body()!!)
-        }
-        Timber.d("end")
-        return list
     }
 
     @Composable
@@ -227,13 +223,31 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
-    fun DetailView(dataJson : String){
-        Timber.e("detail = $dataJson")
-        val imgUrl = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${dataJson}.png"
+    fun DetailView(number : String){
+        Timber.e("detail = $number")
+        val imgUrl = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${number}.png"
+
+        var palette by remember {
+            mutableStateOf<Palette?>(null)
+        }
+
         Column(modifier = Modifier.fillMaxSize()) {
+            Row(modifier = Modifier
+                .fillMaxWidth()
+                .wrapContentHeight()
+                .background(color = Color(palette?.dominantSwatch?.rgb ?: 255)),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ){
+                IconButton(onClick = { navController.popBackStack() }) {
+                    Icon(imageVector = Icons.Filled.ArrowBack, contentDescription = "back", tint = Color.White)
+
+                }
+                Text(text = String.format("No.%04d",number.toInt()), color = Color.White, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 5.dp, bottom = 5.dp, end = 7.dp).align(Alignment.CenterVertically))
+
+            }
             Box(modifier = Modifier
                 .fillMaxWidth()
-                .fillMaxHeight(0.4f)
+                .fillMaxHeight(0.35f)
                 .background(
                     color = Color.White,//colorMap[choiceData!!.types[0].type.name] ?: Color.White,
                     shape = RectangleShape
@@ -242,11 +256,19 @@ class MainActivity : ComponentActivity() {
                 GlideImage(imageModel = imgUrl,
                     requestOptions = { RequestOptions().encodeQuality(30).format(DecodeFormat.PREFER_RGB_565).onlyRetrieveFromCache(true).centerCrop()
                     },
+                    bitmapPalette = BitmapPalette{
+                        palette = it
+                    },
                     contentDescription = "test",
                     contentScale = ContentScale.Fit,
                     modifier = Modifier
                         .fillMaxWidth()
                         .wrapContentHeight()
+                        .clip(RoundedCornerShape(bottomEnd = 25.dp, bottomStart = 25.dp))
+                        .background(
+                            color = Color(palette?.dominantSwatch?.rgb ?: 255),
+                            shape = RectangleShape
+                        )
                 )
             }
         }

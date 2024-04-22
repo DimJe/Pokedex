@@ -103,4 +103,6 @@ dependencies {
     implementation("androidx.palette:palette-ktx:1.0.0")
     implementation ("com.google.accompanist:accompanist-navigation-animation:0.30.0")
 
+    implementation ("androidx.compose.material:material-icons-extended:1.4.0")
+
 }

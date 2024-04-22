@@ -19,9 +19,12 @@ class PokeRepository @Inject constructor(
         return ResultType.Success(response.body()!!)
     }
 
-//    suspend fun getPokemonDetail(number: Int): ResultType<PokemonDetail>{
-//        val response = try {
-//            api.
-//        }
-//    }
+    suspend fun getPokemonDetail(number: String): ResultType<PokemonDetail>{
+        val response = try {
+            api.getPokemonDetail(number)
+        }catch (e: Exception){
+            return ResultType.Error(e.message!!)
+        }
+        return ResultType.Success(response.body()!!)
+    }
 }

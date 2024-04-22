@@ -46,5 +46,18 @@ class PokeViewModel @Inject constructor(
             }
         }
     }
+    fun loadDetail(num: String){
+        viewModelScope.launch {
+            val result = repository.getPokemonDetail(num)
+            when(result){
+                is ResultType.Error -> {
+                    Timber.e(result.message)
+                }
+                is ResultType.Success -> {
+                    Timber.e("${result.data}")
+                }
+            }
+        }
+    }
 
 }
