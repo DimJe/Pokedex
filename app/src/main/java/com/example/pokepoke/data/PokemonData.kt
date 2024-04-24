@@ -26,7 +26,6 @@ data class Stat(val stat: StatDetail,@Json(name="base_stat")val baseStat: Int)
 data class StatDetail(val name: String)
 
 data class PokemonListItem(val name: String,val imgUrl: String,val number: Int)
-data class PokemonDetailData(val name:String,val number: Int, val height: Int, val weight: Int, val type: List<String>, )
 fun Pokemon.toListItem(): PokemonListItem{
 
     val number = if(url.endsWith("/")) {

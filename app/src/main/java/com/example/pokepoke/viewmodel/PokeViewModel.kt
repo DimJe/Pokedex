@@ -1,9 +1,9 @@
 package com.example.pokepoke.viewmodel
 
-import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.pokepoke.data.PokemonDetail
 import com.example.pokepoke.data.PokemonListItem
 import com.example.pokepoke.data.toListItem
 import com.example.pokepoke.network.ResultType
@@ -24,7 +24,7 @@ class PokeViewModel @Inject constructor(
     var loadError = mutableStateOf("")
     var isLoading = mutableStateOf(false)
     var endReached = mutableStateOf(false)
-
+    var pokemonDetail = mutableStateOf<PokemonDetail?>(null)
     fun loadPokemonList(){
         viewModelScope.launch {
             isLoading.value = true
@@ -55,6 +55,7 @@ class PokeViewModel @Inject constructor(
                 }
                 is ResultType.Success -> {
                     Timber.e("${result.data}")
+                    pokemonDetail.value = result.data
                 }
             }
         }

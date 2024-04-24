@@ -1,6 +1,7 @@
 package com.example.pokepoke
 
 import android.annotation.SuppressLint
+import android.graphics.drawable.shapes.OvalShape
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -9,6 +10,7 @@ import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -17,7 +19,9 @@ import androidx.compose.animation.expandIn
 import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,13 +29,16 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
@@ -76,6 +83,8 @@ import com.example.pokepoke.data.PokemonListItem
 import com.example.pokepoke.data.ScreenState
 import com.example.pokepoke.network.ApiService
 import com.example.pokepoke.ui.theme.PokePokeTheme
+import com.example.pokepoke.ui.theme.background
+import com.example.pokepoke.ui.theme.colorMap
 import com.example.pokepoke.viewmodel.PokeViewModel
 import com.google.accompanist.navigation.animation.AnimatedNavHost
 import com.google.accompanist.navigation.animation.rememberAnimatedNavController
@@ -88,10 +97,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
-//url로 이미지 가져오기
-//Image(painter = rememberImagePainter(data = memo.imageUrl), contentDescription = "대표이미지")
-//미리 다음 이미지 캐시해두기
-//기존 livedata에 새로 얻어온 20개의 데이터를 추가하는 과정이 리스트 크기가 커질수록 오래걸림
+
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     var TAG = "tag"
@@ -127,7 +133,6 @@ class MainActivity : ComponentActivity() {
                             ) {
                             type = NavType.StringType
                         })){
-                            viewModel.loadDetail(it.arguments?.getString("data")!!)
                             DetailView(it.arguments?.getString("data")!!)
                         }
                     }
@@ -178,14 +183,14 @@ class MainActivity : ComponentActivity() {
         var itemPosition by remember {
             mutableStateOf(Offset.Zero)
         }
-        //리스트 나오는데 7-8초
+
         Column(modifier = Modifier
             .fillMaxWidth(0.5f)
             .padding(10.dp)
             .combinedClickable(
                 onClick = {
-                    navController.navigate("${ScreenState.Detail.name}/${data.number}") {
-                    }
+                    viewModel.loadDetail(data.number.toString())
+                    navController.navigate("${ScreenState.Detail.name}/${data.number}")
                 },
                 onLongClick = {
                     Timber.e("Long Click")
@@ -224,32 +229,23 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     fun DetailView(number : String){
-        Timber.e("detail = $number")
         val imgUrl = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${number}.png"
 
         var palette by remember {
             mutableStateOf<Palette?>(null)
         }
+        val pokemonDetail by remember { viewModel.pokemonDetail }
+        var expanded by remember { mutableStateOf(false) }
 
-        Column(modifier = Modifier.fillMaxSize()) {
-            Row(modifier = Modifier
-                .fillMaxWidth()
-                .wrapContentHeight()
-                .background(color = Color(palette?.dominantSwatch?.rgb ?: 255)),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ){
-                IconButton(onClick = { navController.popBackStack() }) {
-                    Icon(imageVector = Icons.Filled.ArrowBack, contentDescription = "back", tint = Color.White)
+        Column(modifier = Modifier
+            .fillMaxSize()
+            .background(background)) {
 
-                }
-                Text(text = String.format("No.%04d",number.toInt()), color = Color.White, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 5.dp, bottom = 5.dp, end = 7.dp).align(Alignment.CenterVertically))
-
-            }
             Box(modifier = Modifier
                 .fillMaxWidth()
                 .fillMaxHeight(0.35f)
                 .background(
-                    color = Color.White,//colorMap[choiceData!!.types[0].type.name] ?: Color.White,
+                    color = background,
                     shape = RectangleShape
                 )
             ) {
@@ -263,24 +259,107 @@ class MainActivity : ComponentActivity() {
                     contentScale = ContentScale.Fit,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .wrapContentHeight()
+                        .fillMaxHeight()
                         .clip(RoundedCornerShape(bottomEnd = 25.dp, bottomStart = 25.dp))
                         .background(
                             color = Color(palette?.dominantSwatch?.rgb ?: 255),
                             shape = RectangleShape
                         )
+                        .align(Alignment.Center)
                 )
+                IconButton(modifier = Modifier.align(Alignment.TopStart),onClick = {
+                    navController.popBackStack()
+                    viewModel.pokemonDetail.value = null
+                }) {
+                    Icon(imageVector = Icons.Filled.ArrowBack, contentDescription = "back", tint = Color.White)
+
+                }
+                Text(text = String.format("No.%04d",number.toInt()), color = Color.White, fontWeight = FontWeight.Bold, modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(top = 10.dp, bottom = 10.dp, end = 7.dp))
+            }
+            pokemonDetail?.let {
+
+                Text(text = it.name, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 27.sp, modifier = Modifier
+                    .padding(top = 20.dp, bottom = 10.dp)
+                    .align(Alignment.CenterHorizontally) )
+                Row(modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 10.dp)
+                    .wrapContentHeight(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center){
+                    pokemonDetail?.types?.forEach {
+                        TypeBox(text = it.type.name)
+                    }
+                }
+                Row(modifier = Modifier.fillMaxWidth().wrapContentHeight(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                    Physical(type = "Weight", data = it.weight)
+                    Physical(type = "Height", data = it.height)
+                }
+                Box(
+                    modifier = Modifier
+                        .background(Color.Gray)
+                        .animateContentSize(animationSpec = tween(1000))
+                        .height(20.dp)
+                        .fillMaxWidth(if (expanded) 1f else 0f)
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) {
+                            expanded = !expanded
+                        }
+
+                ) {
+                }
             }
         }
     }
 }
-
 @Composable
-fun TypeBox(text:String,modifier: Modifier){
-    Box(modifier = modifier){
-        Text(text = text.replaceFirstChar{it.uppercase()},color = Color.White, textAlign = TextAlign.Center,modifier = Modifier
-            .fillMaxWidth()
-            .fillMaxHeight(),
+fun Physical(type: String, data: Int){
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    )
+    {
+        if(type == "Weight"){
+            Text(
+                text = String.format("%.1f KG",data.toFloat().div(10)),
+                color = Color.White,
+                fontWeight = FontWeight.Bold,
+                fontSize = 20.sp,
+                textAlign = TextAlign.Center
+            )
+        }
+        else{
+            Text(
+                text = String.format("%.1f M",data.toFloat().div(10)),
+                color = Color.White,
+                fontWeight = FontWeight.Bold,
+                fontSize = 20.sp,
+                textAlign = TextAlign.Center
+            )
+        }
+        Text(modifier = Modifier.wrapContentWidth().padding(vertical = 5.dp),text = type, color = Color.LightGray, fontSize = 15.sp,textAlign = TextAlign.Center)
+    }
+
+}
+@Composable
+fun TypeBox(text:String){
+    Box(modifier = Modifier
+        .wrapContentHeight()
+        .padding(horizontal = 10.dp)
+        .clip(CircleShape)
+        .background(colorMap[text] ?: Color(0xFF9DC1B7))){
+        Text(text = text.replaceFirstChar{it.uppercase()},
+            color = Color.White,
+            textAlign = TextAlign.Center,
+            fontSize = 15.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier
+                .wrapContentWidth()
+                .wrapContentHeight()
+                .padding(vertical = 5.dp, horizontal = 25.dp),
             style = TextStyle(textAlign = TextAlign.Justify)
         )
     }
