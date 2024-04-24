@@ -7,12 +7,12 @@ plugins {
 
 android {
     namespace = "com.example.pokepoke"
-    compileSdk = 33
+    compileSdk = 34
 
     defaultConfig {
         applicationId = "com.example.pokepoke"
         minSdk = 26
-        targetSdk = 33
+        targetSdk = 34
         versionCode = 1
         versionName = "1.0"
 
@@ -56,9 +56,8 @@ dependencies {
     implementation("androidx.core:core-ktx:1.9.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.1")
     implementation("androidx.activity:activity-compose:1.7.0")
-    implementation(platform("androidx.compose:compose-bom:2023.03.00"))
-    implementation("androidx.compose.foundation:foundation:1.3.1")
-    implementation("androidx.compose.ui:ui")
+    implementation(platform("androidx.compose:compose-bom:2024.04.01"))
+    //implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material:material")
@@ -68,9 +67,8 @@ dependencies {
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
-    androidTestImplementation(platform("androidx.compose:compose-bom:2023.03.00"))
+    androidTestImplementation(platform("androidx.compose:compose-bom:2024.02.00"))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
-    androidTestImplementation(platform("androidx.compose:compose-bom:2023.03.00"))
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 
@@ -89,11 +87,9 @@ dependencies {
     implementation ("com.github.bumptech.glide:compose:1.0.0-alpha.1")
     implementation ("com.github.bumptech.glide:okhttp3-integration:4.11.0")
 
-    implementation("androidx.paging:paging-runtime-ktx:3.2.1")
-    implementation ("androidx.paging:paging-compose:1.0.0-alpha17")
 
     implementation ("com.jakewharton.timber:timber:5.0.1")
-    implementation ("androidx.navigation:navigation-compose:2.6.0")
+    implementation ("androidx.navigation:navigation-compose:2.7.7")
 
     implementation ("androidx.palette:palette-ktx:1.0.0")
 
@@ -101,8 +97,14 @@ dependencies {
     kapt("com.google.dagger:hilt-compiler:2.44")
 
     implementation("androidx.palette:palette-ktx:1.0.0")
-    implementation ("com.google.accompanist:accompanist-navigation-animation:0.30.0")
+    //implementation ("com.google.accompanist:accompanist-navigation-animation:0.30.0")
 
     implementation ("androidx.compose.material:material-icons-extended:1.4.0")
+
+    implementation("androidx.compose.ui:ui:1.7.0-alpha07")
+    implementation("androidx.compose.animation:animation-core:1.7.0-alpha07")
+    implementation("androidx.compose.animation:animation:1.7.0-alpha07")
+    implementation("androidx.compose.foundation:foundation:1.7.0-alpha07")
+
 
 }

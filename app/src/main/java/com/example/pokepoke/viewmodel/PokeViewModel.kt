@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.pokepoke.data.PokemonDetail
 import com.example.pokepoke.data.PokemonListItem
+import com.example.pokepoke.data.ScreenState
 import com.example.pokepoke.data.toListItem
 import com.example.pokepoke.network.ResultType
 import com.example.pokepoke.repository.PokeRepository
@@ -60,5 +61,6 @@ class PokeViewModel @Inject constructor(
             }
         }
     }
+
 
 }
