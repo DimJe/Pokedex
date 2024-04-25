@@ -14,6 +14,7 @@ import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -43,10 +44,12 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
+import androidx.compose.material.LinearProgressIndicator
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
 import androidx.compose.material.TopAppBar
@@ -55,6 +58,8 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -70,10 +75,15 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -129,9 +139,12 @@ class MainActivity : ComponentActivity() {
                                 PokemonLazyVerticalGrid(this@composable)
                             }
                             composable(
-                                route = ScreenState.Detail.name,
+                                route = "${ScreenState.Detail.name}/{color}",
+                                arguments = listOf(navArgument("color"){
+                                    type = NavType.IntType
+                                })
                             ) {
-                                DetailView(this@composable)
+                                DetailView(it.arguments?.getInt("color",255)!!,this@composable)
                             }
                         }
 //                        AnimatedContent(targetState = screenState, label = "", contentKey = {it.javaClass},transitionSpec = {
@@ -169,11 +182,11 @@ class MainActivity : ComponentActivity() {
             item(span = { GridItemSpan(this.maxLineSpan)}) {
                 MyTopAppBar(name = stringResource(id = R.string.app_name))
             }
-            items(pokemonList.count()){
-                if(!isLoading && it >= pokemonList.count()-1){
+            itemsIndexed(items = pokemonList,key = {_,pokemon -> pokemon.name}){index,pokemon ->
+                if(!isLoading && index >= pokemonList.count()-1){
                     viewModel.loadPokemonList()
                 }
-                ListItem(data = pokemonList[it],animatedContentScope)
+                ListItem(data = pokemon,animatedContentScope)
             }
         }
     }
@@ -192,7 +205,7 @@ class MainActivity : ComponentActivity() {
                 onClick = {
                     viewModel.loadDetail(data.number.toString())
                     //viewModel.navToDetail()
-                    navController.navigate(ScreenState.Detail.name)
+                    navController.navigate("${ScreenState.Detail.name}/${palette?.dominantSwatch?.rgb}")
 
                 },
             )
@@ -243,14 +256,11 @@ class MainActivity : ComponentActivity() {
 
     @OptIn(ExperimentalSharedTransitionApi::class)
     @Composable
-    fun SharedTransitionScope.DetailView(animatedContentScope: AnimatedVisibilityScope){
+    fun SharedTransitionScope.DetailView(color:Int,animatedContentScope: AnimatedVisibilityScope){
 
-        var palette by remember {
-            mutableStateOf<Palette?>(null)
-        }
+
         val pokemonDetail by remember { viewModel.pokemonDetail }
         var expanded by remember { mutableStateOf(false) }
-
         Column(modifier = Modifier
             .fillMaxSize()
             .background(background)) {
@@ -268,9 +278,6 @@ class MainActivity : ComponentActivity() {
                     GlideImage(imageModel = imgUrl,
                         requestOptions = { RequestOptions().encodeQuality(30).format(DecodeFormat.PREFER_RGB_565).centerCrop()
                         },
-                        bitmapPalette = BitmapPalette{
-                            palette = it
-                        },
                         contentDescription = "test",
                         contentScale = ContentScale.Fit,
                         modifier = Modifier
@@ -278,19 +285,17 @@ class MainActivity : ComponentActivity() {
                             .fillMaxHeight()
                             .clip(RoundedCornerShape(bottomEnd = 25.dp, bottomStart = 25.dp))
                             .background(
-                                color = Color(palette?.dominantSwatch?.rgb ?: 255),
+                                color = Color(color),
                                 shape = RectangleShape
                             )
-
-                                .sharedElement(
-                                    rememberSharedContentState(key = it.name),
-                                    animatedVisibilityScope = animatedContentScope
-                                )
+                            .sharedElement(
+                                rememberSharedContentState(key = it.name),
+                                animatedVisibilityScope = animatedContentScope
+                            )
 
                     )
                     IconButton(modifier = Modifier.align(Alignment.TopStart),onClick = {
-                        navController.popBackStack()
-                        //viewModel.navToMain()
+                        navController.navigateUp()
                         viewModel.pokemonDetail.value = null
                     }) {
                         Icon(imageVector = Icons.Filled.ArrowBack, contentDescription = "back", tint = Color.White)
@@ -298,13 +303,7 @@ class MainActivity : ComponentActivity() {
                     }
                     Text(text = String.format("No.%04d",it.id), color = Color.White, fontWeight = FontWeight.Bold, modifier = Modifier
                         .align(Alignment.TopEnd)
-                        .padding(top = 10.dp, bottom = 10.dp, end = 7.dp)
-//                        .then(Modifier.sharedElement(
-//                            rememberSharedContentState(
-//                                key = "number${it.id}"
-//                            ), animatedContentScope
-//                        ).skipToLookaheadSize())
-                    )
+                        .padding(top = 10.dp, bottom = 10.dp, end = 7.dp))
                 }
 
                 Text(text = it.name, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 27.sp, modifier = Modifier
@@ -325,21 +324,87 @@ class MainActivity : ComponentActivity() {
                     Physical(type = "Weight", data = it.weight)
                     Physical(type = "Height", data = it.height)
                 }
+
+                val screenWidth = LocalConfiguration.current.screenWidthDp.dp.value
+                val isLocalInspectionMode = LocalInspectionMode.current
+                var progressWidth by remember {
+                    mutableFloatStateOf(
+                        if (isLocalInspectionMode) {
+                            screenWidth
+                        } else {
+                            0f
+                        },
+                    )
+                }
                 Box(
                     modifier = Modifier
-                        .background(Color.Gray)
-                        .animateContentSize(animationSpec = tween(1000))
-                        .height(20.dp)
-                        .fillMaxWidth(if (expanded) 1f else 0f)
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null
-                        ) {
-                            expanded = !expanded
-                        }
-
+                        .fillMaxWidth()
+                        .height(18.dp)
+                        .onSizeChanged { progressWidth = it.width * 0.5f }
+                        .background(
+                            color = Color.White,
+                            shape = RoundedCornerShape(64.dp),
+                        )
+                        .clip(RoundedCornerShape(64.dp)),
                 ) {
-                }
+                    var textWidth by remember { mutableIntStateOf(0) }
+                    val threshold = 16
+                    //텍스트가 들어갈 수 있는 최소 자리가 있는지?
+                    val isInner by remember(
+                        progressWidth,
+                        textWidth,
+                    ) { mutableStateOf(progressWidth > (textWidth + threshold * 2)) }
+
+                    val animation: Float by animateFloatAsState(
+                        targetValue = if (progressWidth == 0f) 0f else 1f,
+                        // Configure the animation duration and easing.
+                        animationSpec = tween(durationMillis = 950, easing = LinearOutSlowInEasing),
+                        label = "",
+                    )
+
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.CenterStart)
+                            .width(
+                                progressWidth
+                                    .toInt()
+                                    .pxToDp() * animation,
+                            )
+                            .height(18.dp)
+                            .background(
+                                color = Color.Gray,
+                                shape = RoundedCornerShape(64.dp),
+                            ),
+                    ) {
+//                        if (isInner) {
+//                            Text(
+//                                modifier = Modifier
+//                                    .onSizeChanged { textWidth = it.width }
+//                                    .align(Alignment.CenterEnd)
+//                                    .padding(end = (threshold * 2).pxToDp()),
+//                                text = label,
+//                                fontSize = 12.sp,
+//                                color = PokedexTheme.colors.absoluteWhite,
+//                            )
+//                        }
+//                    }
+
+//                    if (!isInner) {
+//                        Text(
+//                            modifier = Modifier
+//                                .onSizeChanged { textWidth = it.width }
+//                                .align(Alignment.CenterStart)
+//                                .padding(
+//                                    start = progressWidth
+//                                        .toInt()
+//                                        .pxToDp() + threshold.pxToDp(),
+//                                ),
+//                            text = label,
+//                            fontSize = 12.sp,
+//                            color = PokedexTheme.colors.absoluteBlack,
+//                        )
+//                    }
+                }}
             }
         }
     }
@@ -411,3 +476,5 @@ fun MyTopAppBar(name: String){
         ) }, backgroundColor = Color.White,
     )
 }
+@Composable
+fun Int.pxToDp(): Dp = with(LocalDensity.current) { this@pxToDp.toDp() }
