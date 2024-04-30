@@ -32,12 +32,14 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
@@ -228,9 +230,9 @@ class MainActivity : ComponentActivity() {
                     )
 
                     .sharedElement(
-                            rememberSharedContentState(key = data.name),
-                            animatedVisibilityScope = animatedContentScope
-                        )
+                        rememberSharedContentState(key = data.name),
+                        animatedVisibilityScope = animatedContentScope
+                    )
 
             )
             Text(
@@ -320,91 +322,22 @@ class MainActivity : ComponentActivity() {
                 }
                 Row(modifier = Modifier
                     .fillMaxWidth()
-                    .wrapContentHeight(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                    .wrapContentHeight()
+                    .padding(vertical = 5.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
                     Physical(type = "Weight", data = it.weight)
                     Physical(type = "Height", data = it.height)
                 }
-
-                val screenWidth = LocalConfiguration.current.screenWidthDp.dp.value
-                val isLocalInspectionMode = LocalInspectionMode.current
-                var progressWidth by remember {
-                    mutableFloatStateOf(
-                        if (isLocalInspectionMode) {
-                            screenWidth
-                        } else {
-                            0f
-                        },
-                    )
+                Column(verticalArrangement = Arrangement.Center) {
+                    it.stats.forEach {stats ->
+                        Row(horizontalArrangement = Arrangement.SpaceEvenly) {
+                            Text(modifier = Modifier.fillMaxWidth(0.2f).padding(start = 10.dp, end = 10.dp),text = stats.stat.name, textAlign = TextAlign.Center)
+                            PokeProgressBar(typeName = stats.stat.name, baseStat = stats.baseStat)
+                        }
+                        //PokeProgressBar(typeName = stats.stat.name, baseStat = stats.baseStat)
+                        Spacer(modifier = Modifier.height(15.dp))
+                    }
                 }
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(18.dp)
-                        .onSizeChanged { progressWidth = it.width * 0.5f }
-                        .background(
-                            color = Color.White,
-                            shape = RoundedCornerShape(64.dp),
-                        )
-                        .clip(RoundedCornerShape(64.dp)),
-                ) {
-                    var textWidth by remember { mutableIntStateOf(0) }
-                    val threshold = 16
-                    //텍스트가 들어갈 수 있는 최소 자리가 있는지?
-                    val isInner by remember(
-                        progressWidth,
-                        textWidth,
-                    ) { mutableStateOf(progressWidth > (textWidth + threshold * 2)) }
 
-                    val animation: Float by animateFloatAsState(
-                        targetValue = if (progressWidth == 0f) 0f else 1f,
-                        // Configure the animation duration and easing.
-                        animationSpec = tween(durationMillis = 950, easing = LinearOutSlowInEasing),
-                        label = "",
-                    )
-
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.CenterStart)
-                            .width(
-                                progressWidth
-                                    .toInt()
-                                    .pxToDp() * animation,
-                            )
-                            .height(18.dp)
-                            .background(
-                                color = Color.Gray,
-                                shape = RoundedCornerShape(64.dp),
-                            ),
-                    ) {
-//                        if (isInner) {
-//                            Text(
-//                                modifier = Modifier
-//                                    .onSizeChanged { textWidth = it.width }
-//                                    .align(Alignment.CenterEnd)
-//                                    .padding(end = (threshold * 2).pxToDp()),
-//                                text = label,
-//                                fontSize = 12.sp,
-//                                color = PokedexTheme.colors.absoluteWhite,
-//                            )
-//                        }
-//                    }
-
-//                    if (!isInner) {
-//                        Text(
-//                            modifier = Modifier
-//                                .onSizeChanged { textWidth = it.width }
-//                                .align(Alignment.CenterStart)
-//                                .padding(
-//                                    start = progressWidth
-//                                        .toInt()
-//                                        .pxToDp() + threshold.pxToDp(),
-//                                ),
-//                            text = label,
-//                            fontSize = 12.sp,
-//                            color = PokedexTheme.colors.absoluteBlack,
-//                        )
-//                    }
-                }}
             }
         }
     }
@@ -461,7 +394,96 @@ fun TypeBox(text:String){
         )
     }
 }
+@Composable
+fun PokeProgressBar(typeName: String,baseStat: Int){
+    val screenWidth = LocalConfiguration.current.screenWidthDp.dp.value
+    val isLocalInspectionMode = LocalInspectionMode.current
+    var progressWidth by remember {
+        mutableFloatStateOf(
+            if (isLocalInspectionMode) {
+                screenWidth
+            } else {
+                0f
+            },
+        )
+    }
+    Box(
+        modifier = Modifier
+            .padding(horizontal = 16.dp)
+            .fillMaxWidth()
+            .height(18.dp)
+            .onSizeChanged { progressWidth = it.width * 0.25f }
+            .background(
+                color = Color.White,
+                shape = RoundedCornerShape(64.dp),
+            )
+            .clip(RoundedCornerShape(64.dp))
+        ,
+    ) {
+        var textWidth by remember { mutableIntStateOf(0) }
+        val threshold = 16
+        //텍스트가 들어갈 수 있는 최소 자리가 있는지?
+        val isInner by remember(
+            progressWidth,
+            textWidth,
+        ) { mutableStateOf(progressWidth > (textWidth + threshold * 2)) }
 
+        val animation: Float by animateFloatAsState(
+            targetValue = if (progressWidth == 0f) 0f else 1f,
+            // Configure the animation duration and easing.
+            animationSpec = tween(durationMillis = 950, easing = LinearOutSlowInEasing),
+            label = "",
+        )
+
+        Box(
+            modifier = Modifier
+                .align(Alignment.CenterStart)
+                .width(
+                    progressWidth
+                        .toInt()
+                        .pxToDp() * animation,
+                )
+                .height(18.dp)
+                .padding(end = 10.dp)
+                .background(
+                    color = Color.Gray,
+                    shape = RoundedCornerShape(64.dp),
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            if (isInner) {
+                Text(
+                    modifier = Modifier
+                        .onSizeChanged { textWidth = it.width }
+                        .align(Alignment.CenterEnd)
+                        .padding(end = (threshold * 2).pxToDp()),
+                    text = "150/300",
+                    fontSize = 12.sp,
+                    color = Color.White,
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+
+        if (!isInner) {
+            Text(
+                modifier = Modifier
+                    .onSizeChanged { textWidth = it.width }
+                    .align(Alignment.CenterStart)
+                    .padding(
+                        start = progressWidth
+                            .toInt()
+                            .pxToDp() + threshold.pxToDp(),
+                    ),
+                text = "150/300",
+                fontSize = 12.sp,
+                color = Color.Black,
+                textAlign = TextAlign.Center
+            )
+        }
+
+    }
+}
 @SuppressLint("UnusedMaterialScaffoldPaddingParameter")
 @Composable
 fun MyTopAppBar(name: String){
