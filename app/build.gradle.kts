@@ -82,8 +82,7 @@ dependencies {
 
     implementation ("com.google.accompanist:accompanist-systemuicontroller:0.27.0")
 
-    implementation ("com.github.skydoves:landscapist-glide:1.4.7")
-    implementation("io.coil-kt:coil-compose:2.4.0")
+    implementation ("com.github.skydoves:landscapist-glide:2.3.3")
     implementation ("com.github.bumptech.glide:compose:1.0.0-alpha.1")
     implementation ("com.github.bumptech.glide:okhttp3-integration:4.11.0")
 
@@ -102,9 +101,11 @@ dependencies {
     implementation ("androidx.compose.material:material-icons-extended:1.4.0")
 
     implementation("androidx.compose.ui:ui:1.7.0-alpha07")
+    implementation("androidx.compose.ui:ui-graphics:1.7.0-alpha07")
     implementation("androidx.compose.animation:animation-core:1.7.0-alpha07")
     implementation("androidx.compose.animation:animation:1.7.0-alpha07")
     implementation("androidx.compose.foundation:foundation:1.7.0-alpha07")
+    implementation ("com.github.skydoves:landscapist-palette:2.3.3")
 
 
 }
