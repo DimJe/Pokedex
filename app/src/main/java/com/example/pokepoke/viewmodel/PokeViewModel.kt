@@ -29,10 +29,10 @@ class PokeViewModel @Inject constructor(
     fun loadPokemonList(){
         viewModelScope.launch {
             isLoading.value = true
-            val result = repository.getPokemonList(pageNum * 50)
+            val result = repository.getPokemonList(pageNum * 20)
             when(result){
                 is ResultType.Success -> {
-                    endReached.value = pageNum * 50 >= result.data!!.results.size
+                    endReached.value = pageNum * 20 >= result.data!!.results.size
                     val pokeListItem = result.data.results.map { it.toListItem() }
 
                     pageNum++
